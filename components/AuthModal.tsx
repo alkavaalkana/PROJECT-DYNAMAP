@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, KeyRound, UserPlus, ShieldCheck } from 'lucide-react';
+import { Lock, Shield, UserCheck, X } from 'lucide-react';
 import type { Account, Profile, SystemSettings } from '../types/dynamap';
 
 interface AuthModalProps {
@@ -10,286 +10,170 @@ interface AuthModalProps {
   onSuccess: (token: string, account: Account) => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({
-  isOpen,
-  onClose,
-  profiles,
-  settings,
-  onSuccess,
-}) => {
-  const [tab, setTab] = useState<'login' | 'claim'>('login');
+export function AuthModal({ isOpen, onClose, profiles, onSuccess }: AuthModalProps) {
+  const [tab, setTab] = useState<'student' | 'admin'>('student');
+  const [selectedProfileId, setSelectedProfileId] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedProfileId, setSelectedProfileId] = useState('');
-  const [claimCode, setClaimCode] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const unclaimedProfiles = profiles.filter((p) => !p.archived && !p.claimedByAccountId);
-
-  async function handleLogin(e: React.FormEvent) {
+  function handleAdminLogin(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Gagal masuk.');
-      } else {
-        onSuccess(data.token, data.account);
-        onClose();
-      }
-    } catch {
-      setError('Gagal terhubung ke server.');
-    } finally {
-      setLoading(false);
+    if (username.trim().toLowerCase() === 'admin' && password === 'joijo123') {
+      const adminAccount: Account = {
+        id: 'acc-admin-local',
+        username: 'admin',
+        displayName: 'Administrator DYNAMAP',
+        role: 'admin',
+      };
+      onSuccess('local-admin-token', adminAccount);
+      setUsername('');
+      setPassword('');
+      onClose();
+      return;
     }
+    setError('Username atau kata sandi administrator tidak sesuai.');
   }
 
-  async function handleClaim(e: React.FormEvent) {
+  function handleStudentClaim(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth/register-claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username,
-          password,
-          profileId: selectedProfileId,
-          claimCode,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Gagal menautkan profil.');
-      } else {
-        onSuccess(data.token, data.account);
-        onClose();
-      }
-    } catch {
-      setError('Gagal terhubung ke server.');
-    } finally {
-      setLoading(false);
+    const target = profiles.find((p) => p.id === selectedProfileId);
+    if (!target) {
+      setError('Silakan pilih nama partisipan terlebih dahulu.');
+      return;
     }
+    const studentAccount: Account = {
+      id: `acc-${target.id}`,
+      username: target.id,
+      displayName: target.fullName,
+      role: 'student',
+      linkedProfileId: target.id,
+    };
+    onSuccess(`local-token-${target.id}`, studentAccount);
+    onClose();
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B0F22]/60 backdrop-blur-sm p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="auth-modal-title"
-    >
-      <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-[0_24px_60px_-20px_rgba(11,15,34,0.45)] overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#FFFFFF] to-[#F5F6FC]">
-          <div>
-            <h2 id="auth-modal-title" className="text-lg font-display font-semibold text-slate-900">
-              Akses Akun DYNAMAP
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Masuk atau tautkan akun baru ke profil resmi melalui kode verifikasi.
-            </p>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+      <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h2 className="font-display font-semibold text-base text-slate-900">
+            Masuk / Klaim Profil DYNAMAP
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup jendela akun"
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="px-6 pt-4">
-          <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg">
-            <button
-              type="button"
-              onClick={() => {
-                setTab('login');
-                setError('');
-              }}
-              className={`flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-                tab === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <KeyRound className="w-3.5 h-3.5" />
-              Masuk Akun
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setTab('claim');
-                setError('');
-              }}
-              className={`flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-                tab === 'claim' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              Daftar & Klaim Profil
-            </button>
-          </div>
+        <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl text-xs font-medium">
+          <button
+            type="button"
+            onClick={() => {
+              setTab('student');
+              setError('');
+            }}
+            className={`py-2 rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+              tab === 'student' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            Klaim Siswa
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTab('admin');
+              setError('');
+            }}
+            className={`py-2 rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+              tab === 'admin' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            Login Admin
+          </button>
         </div>
 
-        {settings.mode === 'development' && (
-          <div className="mx-6 mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900">
-            <strong>Mode Pengembangan Aktif:</strong> Pendaftaran dan login akun siswa sementara ditutup
-            oleh Administrator. Hanya Administrator yang dapat masuk untuk menyiapkan data.
-          </div>
-        )}
-
         {error && (
-          <div className="mx-6 mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800">
+          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800">
             {error}
           </div>
         )}
 
-        {tab === 'login' ? (
-          <form onSubmit={handleLogin} className="p-6 space-y-4">
+        {tab === 'admin' ? (
+          <form onSubmit={handleAdminLogin} className="space-y-4">
             <div>
-              <label htmlFor="login-username" className="block text-xs font-medium text-slate-700 mb-1">
-                Nama Pengguna
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Username
               </label>
               <input
-                id="login-username"
                 type="text"
-                required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Contoh: admin atau alano.lsi"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Masukkan username"
+                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
               />
             </div>
             <div>
-              <label htmlFor="login-password" className="block text-xs font-medium text-slate-700 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Kata Sandi
               </label>
               <input
-                id="login-password"
                 type="password"
-                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Masukkan kata sandi"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
               />
             </div>
-
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1">
-              <div className="flex items-center gap-1.5 font-medium text-slate-800">
-                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-                Akses Administrator Awal
-              </div>
-              <p>
-                Nama pengguna: <code className="font-mono text-slate-900">admin</code> · Kata sandi:{' '}
-                <code className="font-mono text-slate-900">admin123</code>
-              </p>
-              <p>Siswa atau guru yang belum memiliki akun dapat mendaftar di tab Daftar & Klaim Profil menggunakan kode verifikasi dari Administrator.</p>
-            </div>
-
             <button
               type="submit"
-              disabled={loading}
-              className="w-full py-2.5 px-4 text-sm font-medium text-white bg-[#151D40] hover:bg-[#233070] rounded-lg transition-colors disabled:opacity-50"
+              className="w-full py-2.5 px-4 bg-[#151D40] hover:bg-[#233070] text-white text-xs font-medium rounded-lg flex items-center justify-center gap-1.5"
             >
-              {loading ? 'Memverifikasi...' : 'Masuk ke DYNAMAP'}
+              <Lock className="w-3.5 h-3.5" />
+              Masuk sebagai Administrator
             </button>
           </form>
         ) : (
-          <form onSubmit={handleClaim} className="p-6 space-y-4">
+          <form onSubmit={handleStudentClaim} className="space-y-4">
             <div>
-              <label htmlFor="claim-profile" className="block text-xs font-medium text-slate-700 mb-1">
-                Pilih Profil Anda di Database Sekolah
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Pilih Nama Partisipan (37 Siswa)
               </label>
               <select
-                id="claim-profile"
-                required
                 value={selectedProfileId}
                 onChange={(e) => setSelectedProfileId(e.target.value)}
-                disabled={settings.mode === 'development'}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
               >
-                <option value="">-- Pilih profil yang belum ditautkan --</option>
-                {unclaimedProfiles.map((p) => (
+                <option value="">-- Pilih namamu di daftar kelas --</option>
+                {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.displayName} ({p.category})
+                    {p.fullName} ({p.typology?.sociotype || '-'})
                   </option>
                 ))}
               </select>
             </div>
-
-            <div>
-              <label htmlFor="claim-code" className="block text-xs font-medium text-slate-700 mb-1">
-                Kode Verifikasi Klaim (dari Administrator)
-              </label>
-              <input
-                id="claim-code"
-                type="text"
-                required
-                disabled={settings.mode === 'development'}
-                value={claimCode}
-                onChange={(e) => setClaimCode(e.target.value)}
-                placeholder="Contoh: DYN-34-ALANO"
-                className="w-full px-3 py-2 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <p className="text-[11px] text-slate-500 mt-1">
-                Sistem menolak klaim profil hanya berdasarkan pengetikan nama demi melindungi privasi data siswa.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="claim-username" className="block text-xs font-medium text-slate-700 mb-1">
-                  Nama Pengguna Baru
-                </label>
-                <input
-                  id="claim-username"
-                  type="text"
-                  required
-                  disabled={settings.mode === 'development'}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="mis. alano"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div>
-                <label htmlFor="claim-password" className="block text-xs font-medium text-slate-700 mb-1">
-                  Kata Sandi (min. 6)
-                </label>
-                <input
-                  id="claim-password"
-                  type="password"
-                  required
-                  minLength={6}
-                  disabled={settings.mode === 'development'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••"
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-            </div>
-
             <button
               type="submit"
-              disabled={loading || settings.mode === 'development'}
-              className="w-full py-2.5 px-4 text-sm font-medium text-white bg-[#151D40] hover:bg-[#233070] rounded-lg transition-colors disabled:opacity-50"
+              className="w-full py-2.5 px-4 bg-[#151D40] hover:bg-[#233070] text-white text-xs font-medium rounded-lg flex items-center justify-center gap-1.5"
             >
-              {loading ? 'Memverifikasi & Menautkan...' : 'Verifikasi & Tautkan Profil'}
+              <UserCheck className="w-3.5 h-3.5" />
+              Masuk & Klaim Profil Ini
             </button>
           </form>
         )}
       </div>
     </div>
   );
-};
+}
