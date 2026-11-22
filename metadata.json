@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix Remix DYNAMAP — Sistem Pemetaan Kepribadian \u0026 Dinamika Interpersonal",
+  "description": "Platform edukasi, analisis kepribadian, dinamika komunikasi, dan kolaborasi akademik berbasis Socionics, Enneagram, dan Tipologi Jung untuk lingkungan SMA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

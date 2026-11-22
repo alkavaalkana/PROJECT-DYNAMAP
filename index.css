@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces", Georgia, ui-serif, serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Dreamy Moonlit Periwinkle Neutrals */
+  --color-slate-50: #f4f5fc;
+  --color-slate-100: #e9ecf9;
+  --color-slate-200: #d5dcf2;
+  --color-slate-300: #bcc6e6;
+  --color-slate-400: #8591ba;
+  --color-slate-500: #59648c;
+  --color-slate-600: #414b70;
+  --color-slate-700: #2c3558;
+  --color-slate-800: #1b223f;
+  --color-slate-900: #111731;
+  --color-slate-950: #0b0f22;
+
+  /* Celestial Twilight Cobalt Accents */
+  --color-indigo-50: #eff2fd;
+  --color-indigo-100: #dee4fa;
+  --color-indigo-200: #c3cef5;
+  --color-indigo-300: #9baeed;
+  --color-indigo-400: #7086de;
+  --color-indigo-500: #4e63c6;
+  --color-indigo-600: #3a4da8;
+  --color-indigo-700: #2c3c8c;
+  --color-indigo-800: #233070;
+  --color-indigo-900: #1a2352;
+  --color-indigo-950: #111738;
+}
+
+:root {
+  --dm-page-bg: #eef1fb;
+  --dm-page-gradient: none;
+  --dm-card-bg: #ffffff;
+  --dm-accent: #2c3c8c;
+  --dm-text-primary: #111731;
+  --dm-border-color: #d5dcf2;
+  --dm-button-bg: #151d40;
+  --dm-decor-color: #dfbe74;
+  --dm-chart-primary: #3a4da8;
+  --dm-chart-secondary: #c9a65b;
+  --dm-sidebar-bg: #101733;
+  --dm-header-bg: rgba(245, 246, 252, 0.85);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--dm-page-bg, #f0f2fb);
+    color: var(--dm-text-primary, #111731);
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+}
+
+.dreamy-canvas {
+  background-color: var(--dm-page-bg, #eef1fb);
+  background-image:
+    radial-gradient(ellipse 75% 48% at 92% -4%, color-mix(in srgb, var(--dm-accent, #6c82e0) 20%, transparent), transparent 64%),
+    radial-gradient(ellipse 64% 44% at 10% 10%, color-mix(in srgb, var(--dm-decor-color, #dfbe74) 16%, transparent), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 68% 54%, rgba(154, 144, 228, 0.12), transparent 65%),
+    var(--dm-page-gradient, linear-gradient(180deg, #f5f6fd 0%, #edf0fb 55%, #f3f1fb 100%));
+}
+
+.dreamy-surface {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--dm-card-bg, #ffffff) 95%, transparent) 0%,
+    color-mix(in srgb, var(--dm-card-bg, #ffffff) 88%, #eef1fb) 100%
+  );
+  backdrop-filter: blur(10px);
+  border-color: var(--dm-border-color, #d5dcf2);
+  box-shadow:
+    0 18px 46px -28px rgba(22, 30, 68, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.celestial-hairline {
+  background: linear-gradient(
+    90deg,
+    rgba(195, 203, 229, 0.25),
+    color-mix(in srgb, var(--dm-decor-color, #d2ad62) 68%, transparent),
+    color-mix(in srgb, var(--dm-accent, #8296e2) 55%, transparent),
+    rgba(195, 203, 229, 0.25)
+  );
+}
+
+.celestial-gold-rule {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--dm-decor-color, #d4ae60) 75%, transparent),
+    transparent
+  );
+}
+
+@keyframes twilightFloat {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.72;
+  }
+  50% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+.twilight-float {
+  animation: twilightFloat 7s ease-in-out infinite;
+}
+
+/* Smooth Page & Staggered Reveal Transitions (compositor-only) */
+@keyframes dmPanelEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dm-view-enter {
+  animation: dmPanelEnter 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.dm-stagger > * {
+  animation: dmPanelEnter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.dm-stagger > *:nth-child(2) { animation-delay: 35ms; }
+.dm-stagger > *:nth-child(3) { animation-delay: 70ms; }
+.dm-stagger > *:nth-child(4) { animation-delay: 105ms; }
+.dm-stagger > *:nth-child(5) { animation-delay: 140ms; }
+
+.dm-interactive-card {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dm-interactive-card:hover {
+  transform: translateY(-2px);
+}
+.dm-interactive-card:active {
+  transform: translateY(0px) scale(0.995);
+}
+
+/* 3D Perspective Reveal Flip for Typology ID Card */
+.card-3d-scene {
+  perspective: 1600px;
+}
+
+.card-3d-inner {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 780ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card-3d-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.card-3d-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-3d-face-front {
+  transform: rotateY(180deg);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Interactive Scientific Atlas & Editorial Archive Primitives */
+.atlas-sheet {
+  background: color-mix(in srgb, var(--dm-card-bg, #ffffff) 94%, #f4f5fc);
+  border-top: 1px solid var(--dm-border-color, #d5dcf2);
+  border-bottom: 1px solid var(--dm-border-color, #d5dcf2);
+}
+
+.atlas-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(44, 60, 140, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(44, 60, 140, 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.atlas-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--dm-accent, #2c3c8c);
+}
+
+.atlas-kicker::before {
+  content: "";
+  width: 1.25rem;
+  height: 1px;
+  background-color: var(--dm-decor-color, #c9a65b);
+}
+
+.atlas-index {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.atlas-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--dm-border-color, #d5dcf2) 0%,
+    color-mix(in srgb, var(--dm-decor-color, #c9a65b) 65%, transparent) 38%,
+    var(--dm-border-color, #d5dcf2) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
