@@ -50,7 +50,24 @@ import { TypologyArcadeView } from './components/TypologyArcadeView';
 import { TypologyIdCardView } from './components/TypologyIdCardView';
 import { TypologyPlaygroundView } from './components/TypologyPlaygroundView';
 import { createDefaultBannerPayload } from './data/bannerDefaults';
-import { DEFAULT_EXPLORATION_CATALOG_CONFIG } from './data/higherEdAndCareerData';
+import {
+  GUIDED_LEARNING_PATHS,
+  INITIAL_CONCEPT_EDGES,
+  INITIAL_CONCEPT_NODES,
+  INITIAL_SCENARIOS,
+} from './data/conceptsAndPathsData';
+import {
+  DEFAULT_EXPLORATION_CATALOG_CONFIG,
+  INITIAL_CAREERS,
+  INITIAL_PROGRAMS,
+  INITIAL_SCHOOL_SUBJECT_TEMPLATES,
+  INITIAL_UNIVERSITIES,
+} from './data/higherEdAndCareerData';
+import {
+  INITIAL_REFERENCES,
+  INITIAL_THEORY_ARTICLES,
+  createInitial37Profiles,
+} from './data/initialDataset';
 import { buildCssGradient, DEFAULT_PALETTE_CONFIG } from './lib/colorUtils';
 import { computeClassStatistics } from './lib/typology';
 import type {
@@ -239,6 +256,13 @@ const DEFAULT_SETTINGS: SystemSettings = {
   classLabel: 'Kelas Penelitian (37 Siswa Awal)',
 };
 
+const STORAGE_PROFILES_KEY = 'dynamap_static_profiles_v1';
+const STORAGE_EXPLORATION_KEY = 'dynamap_static_exploration_v1';
+const STORAGE_GROUPS_KEY = 'dynamap_static_groups_v1';
+const STORAGE_CASES_KEY = 'dynamap_static_cases_v1';
+const STORAGE_INTERPERSONAL_KEY = 'dynamap_static_interpersonal_v1';
+const STORAGE_ACADEMIC_KEY = 'dynamap_static_academic_v1';
+
 export default function App() {
   const [activeModule, setActiveModule] = useState<NavModuleId>('beranda');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -247,34 +271,90 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
-  const [account, setAccount] = useState<Account | null>(null);
-  const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
-  const [aiConfigured, setAiConfigured] = useState(false);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [studyGroups, setStudyGroups] = useState<StudyGroup[]>([]);
-  const [theoryArticles, setTheoryArticles] = useState<TheoryArticle[]>([]);
-  const [references, setReferences] = useState<ReferenceCitation[]>([]);
-  const [cases, setCases] = useState<CaseRecord[]>([]);
-  const [publicActivityCount, setPublicActivityCount] = useState(0);
+  const [account, setAccount] = useState<Account | null>(() => {
+    try {
+      const saved = localStorage.getItem('dynamap_account');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [settings] = useState<SystemSettings>(DEFAULT_SETTINGS);
+  const [aiConfigured] = useState(false);
 
-  const [interpersonalReflections, setInterpersonalReflections] = useState<ReflectionRecord[]>([]);
-  const [academicReflections, setAcademicReflections] = useState<AcademicReflectionRecord[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_PROFILES_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return createInitial37Profiles();
+  });
 
-  const [publishedBanner, setPublishedBanner] = useState<HomepageBannerPayload>(
-    createDefaultBannerPayload
-  );
-  const [subjectTemplates, setSubjectTemplates] = useState<SchoolSubjectTemplate[]>([]);
-  const [universities, setUniversities] = useState<UniversityInstitution[]>([]);
-  const [programs, setPrograms] = useState<UniversityProgram[]>([]);
-  const [careers, setCareers] = useState<CareerRecord[]>([]);
-  const [concepts, setConcepts] = useState<ConceptNode[]>([]);
-  const [conceptEdges, setConceptEdges] = useState<ConceptEdge[]>([]);
-  const [learningPaths, setLearningPaths] = useState<LearningPathDefinition[]>([]);
-  const [scenarios, setScenarios] = useState<ExplorationScenario[]>([]);
-  const [explorationConfig, setExplorationConfig] = useState<ExplorationCatalogConfig>(
-    DEFAULT_EXPLORATION_CATALOG_CONFIG
-  );
-  const [userExploration, setUserExploration] = useState<UserExplorationData | null>(null);
+  const [studyGroups, setStudyGroups] = useState<StudyGroup[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_GROUPS_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [theoryArticles] = useState<TheoryArticle[]>(() => INITIAL_THEORY_ARTICLES);
+  const [references] = useState<ReferenceCitation[]>(() => INITIAL_REFERENCES);
+
+  const [cases, setCases] = useState<CaseRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_CASES_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [publicActivityCount] = useState(0);
+
+  const [interpersonalReflections, setInterpersonalReflections] = useState<ReflectionRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_INTERPERSONAL_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [academicReflections, setAcademicReflections] = useState<AcademicReflectionRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_ACADEMIC_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [publishedBanner] = useState<HomepageBannerPayload>(createDefaultBannerPayload);
+  const [subjectTemplates] = useState<SchoolSubjectTemplate[]>(() => INITIAL_SCHOOL_SUBJECT_TEMPLATES);
+  const [universities] = useState<UniversityInstitution[]>(() => INITIAL_UNIVERSITIES);
+  const [programs] = useState<UniversityProgram[]>(() => INITIAL_PROGRAMS);
+  const [careers] = useState<CareerRecord[]>(() => INITIAL_CAREERS);
+  const [concepts] = useState<ConceptNode[]>(() => INITIAL_CONCEPT_NODES);
+  const [conceptEdges] = useState<ConceptEdge[]>(() => INITIAL_CONCEPT_EDGES);
+  const [learningPaths] = useState<LearningPathDefinition[]>(() => GUIDED_LEARNING_PATHS);
+  const [scenarios] = useState<ExplorationScenario[]>(() => INITIAL_SCENARIOS);
+  const [explorationConfig] = useState<ExplorationCatalogConfig>(DEFAULT_EXPLORATION_CATALOG_CONFIG);
+
+  const [userExploration, setUserExploration] = useState<UserExplorationData | null>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_EXPLORATION_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
 
   const [compareInitialIds, setCompareInitialIds] = useState<string[]>([]);
   const [theoryInitialTab, setTheoryInitialTab] = useState<TheoryLibraryTab | undefined>(undefined);
@@ -289,6 +369,51 @@ export default function App() {
     }
     return DEFAULT_PALETTE_CONFIG;
   });
+
+  useEffect(() => {
+    setLoading(false);
+    setLoadError('');
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_PROFILES_KEY, JSON.stringify(profiles));
+    } catch {
+      // ignore
+    }
+  }, [profiles]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_GROUPS_KEY, JSON.stringify(studyGroups));
+    } catch {
+      // ignore
+    }
+  }, [studyGroups]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_CASES_KEY, JSON.stringify(cases));
+    } catch {
+      // ignore
+    }
+  }, [cases]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_INTERPERSONAL_KEY, JSON.stringify(interpersonalReflections));
+    } catch {
+      // ignore
+    }
+  }, [interpersonalReflections]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_ACADEMIC_KEY, JSON.stringify(academicReflections));
+    } catch {
+      // ignore
+    }
+  }, [academicReflections]);
 
   useEffect(() => {
     if (userExploration?.themePaletteConfig) {
@@ -327,83 +452,10 @@ export default function App() {
     }
   }, [paletteConfig]);
 
-  const fetchReflections = useCallback(async (tokenOverride?: string) => {
-    const token = tokenOverride ?? localStorage.getItem('dynamap_token');
-    if (!token) {
-      setInterpersonalReflections([]);
-      setAcademicReflections([]);
-      return;
-    }
-    try {
-      const res = await fetch('/api/reflections', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setInterpersonalReflections(data.interpersonal || []);
-        setAcademicReflections(data.academic || []);
-      } else {
-        setInterpersonalReflections([]);
-        setAcademicReflections([]);
-      }
-    } catch {
-      setInterpersonalReflections([]);
-      setAcademicReflections([]);
-    }
+  const fetchBootstrap = useCallback(async () => {
+    setLoading(false);
+    setLoadError('');
   }, []);
-
-  const fetchBootstrap = useCallback(
-    async (tokenOverride?: string | null) => {
-      try {
-        setLoadError('');
-        const token =
-          tokenOverride === null ? null : tokenOverride ?? localStorage.getItem('dynamap_token');
-        const res = await fetch('/api/bootstrap', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!res.ok) {
-          throw new Error('Gagal memuat basis data DYNAMAP.');
-        }
-        const data = await res.json();
-        setAccount(data.account || null);
-        setSettings(data.settings || DEFAULT_SETTINGS);
-        setAiConfigured(Boolean(data.aiConfigured));
-        setProfiles(data.profiles || []);
-        setStudyGroups(data.studyGroups || []);
-        setTheoryArticles(data.theoryArticles || []);
-        setReferences(data.references || []);
-        setCases(data.cases || []);
-        setPublicActivityCount(data.publicActivityCount || 0);
-        if (data.publishedBanner) setPublishedBanner(data.publishedBanner);
-        setSubjectTemplates(data.subjectTemplates || []);
-        setUniversities(data.universities || []);
-        setPrograms(data.programs || []);
-        setCareers(data.careers || []);
-        setConcepts(data.concepts || []);
-        setConceptEdges(data.conceptEdges || []);
-        setLearningPaths(data.learningPaths || []);
-        setScenarios(data.scenarios || []);
-        if (data.explorationConfig) setExplorationConfig(data.explorationConfig);
-        setUserExploration(data.userExploration || null);
-
-        if (data.account && token) {
-          await fetchReflections(token);
-        } else {
-          setInterpersonalReflections([]);
-          setAcademicReflections([]);
-        }
-      } catch (err) {
-        setLoadError(err instanceof Error ? err.message : 'Terjadi kesalahan saat memuat sistem.');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [fetchReflections]
-  );
-
-  useEffect(() => {
-    fetchBootstrap();
-  }, [fetchBootstrap]);
 
   const stats = useMemo(() => computeClassStatistics(profiles), [profiles]);
 
@@ -414,20 +466,17 @@ export default function App() {
 
   async function handleAuthSuccess(token: string, loggedAccount: Account) {
     localStorage.setItem('dynamap_token', token);
+    localStorage.setItem('dynamap_account', JSON.stringify(loggedAccount));
     setAccount(loggedAccount);
-    await fetchBootstrap(token);
   }
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
     localStorage.removeItem('dynamap_token');
+    localStorage.removeItem('dynamap_account');
     setAccount(null);
-    setInterpersonalReflections([]);
-    setAcademicReflections([]);
     if (activeModule === 'admin') {
       setActiveModule('beranda');
     }
-    await fetchBootstrap(null);
   }
 
   function handleNavigate(moduleId: NavModuleId, options?: { theoryTab?: TheoryLibraryTab }) {
@@ -453,19 +502,11 @@ export default function App() {
 
   async function patchMyProfile(payload: Record<string, unknown>) {
     if (!account?.linkedProfileId) return;
-    const token = localStorage.getItem('dynamap_token');
-    const res = await fetch(`/api/profiles/${account.linkedProfileId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setProfiles((prev) => prev.map((p) => (p.id === data.profile.id ? data.profile : p)));
-    }
+    setProfiles((prev) =>
+      prev.map((p) =>
+        p.id === account.linkedProfileId ? ({ ...p, ...payload } as Profile) : p
+      )
+    );
   }
 
   async function handleSaveProfileTritype(payload: {
@@ -519,20 +560,15 @@ export default function App() {
   }
 
   async function handleSaveExploration(next: Partial<UserExplorationData>) {
-    const token = localStorage.getItem('dynamap_token');
-    if (!token) return;
-    const res = await fetch('/api/exploration', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(next),
+    setUserExploration((prev) => {
+      const updated = { ...(prev || {}), ...next } as UserExplorationData;
+      try {
+        localStorage.setItem(STORAGE_EXPLORATION_KEY, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
     });
-    if (res.ok) {
-      const data = await res.json();
-      setUserExploration(data.exploration);
-    }
   }
 
   const combinedReadTopics = useMemo(() => {
@@ -551,6 +587,7 @@ export default function App() {
     if (current.includes(topicId)) return;
     await handleSaveExploration({ readTheoryTopics: [...current, topicId] });
   }
+
 
   const activeNavMeta =
     activeModule === 'admin'
